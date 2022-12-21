@@ -22,18 +22,36 @@
 
 int trackInfester(int patient_no, int *detected_time, int *place) {
     void *obj = ifctdb_getData(patient_no);
-    unsigned int infestedTime = ifctele_getinfestedTime(obj);
+    unsigned int infested_time = ifctele_getinfestedTime(obj);
     int infester_no = -1;
-    for (int i = 0; i < ifctdb_len(); i++) {
-        if (i == patient_no) {
-            continue;
+    int cur_time, cur_place;
+    for (int i = 0; i < 3; i++) {
+        cur_time = infested_time - (5 - (i + 1));
+        cur_place = ifctele_getHistPlaceIndex(obj, i);
+
+        for (int j = 0; j < ifctdb_len(); j++) {
+            if (j == patient_no) {
+                continue;
+            }
+            void *obj_ = ifctdb_getData(j);
+            unsigned int infested_time_ = ifctele_getinfestedTime(obj_);
+            // 같은 시간대에 같은 도시에 있었다면 감염시킨 사람
+            if (cur_time == infested_time_ && cur_place == ifctele_getHistPlaceIndex(obj_, N_HISTORY - 1)) {
+                infester_no = j;
+            } else if (cur_time == infested_time_ - 1 && cur_place == ifctele_getHistPlaceIndex(obj_, N_HISTORY - 2)) {
+                infester_no = j;
+            }
         }
-        
+        if (infester_no != -1) {
+            break;
+        }
     }
     if (infester_no == -1) {
-        printf("%d is first-time infester\n", patient_no);
+        printf("\n%d is first-time infester\n", patient_no);
     } else {
-        printf("%d infested by %d\n", patient_no, infester_no);
+        printf("\n%d infested by %d\n", patient_no, infester_no);
+        printf("    time: %d\n", cur_time);
+        printf("    place: %s\n", ifctele_getPlaceName(cur_place));
         trackInfester(infester_no, NULL, NULL);
     }
 }
@@ -125,9 +143,9 @@ int main(int argc, const char *argv[]) {
 
             case MENU_AGE: {
                 int min_age, max_age;
-                printf("Enter the min age: ");
+                printf("\nEnter the min age: ");
                 scanf("%d", &min_age);
-                printf("Enter the max age: ");
+                printf("\nEnter the max age: ");
                 scanf("%d", &max_age);
                 for (int i = 0; i < ifctdb_len(); i++) {
                     void *obj = ifctdb_getData(i);
